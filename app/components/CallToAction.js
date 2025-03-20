@@ -1,7 +1,6 @@
 import CTAGooBG from "../../public/cta-goo-bg.webp";
 
 export default function CallToAction() {
-  // todo: make this real goo
   return (
     <div
       className="guide-footer-cta sm:flex items-center bg-pink-600 justify-between p-12 space-y-4"
