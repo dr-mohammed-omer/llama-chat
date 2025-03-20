@@ -108,6 +108,7 @@ async function runLlava({
   });
 }
 
+// ✅ Function to run Salmonn model (for audio processing)
 async function runSalmonn({
   replicateClient,
   prompt,
