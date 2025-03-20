@@ -21,7 +21,7 @@ export default function TokenForm({ handleTokenSubmit }) {
             >
               Replicate API token
             </Link>{" "}
-            to run this demo. Copy it and paste below:
+            to run this Chat. Copy it and paste below:
           </p>
 
           <form onSubmit={handleTokenSubmit}>
