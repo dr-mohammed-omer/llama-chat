@@ -1,5 +1,6 @@
 import Replicate from "replicate";
 import { ReplicateStream, StreamingTextResponse } from "ai";
+
 export const runtime = "edge";
 
 const VERSIONS = {
@@ -9,35 +10,53 @@ const VERSIONS = {
     "ad1d3f9d2bd683628242b68d890bef7f7bd97f738a7c2ccbf1743a594c723d83",
 };
 
-export async function POST(req) {
-  const params = await req.json();
-  const ip = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for");
-
-  params.replicateClient = new Replicate({
-    auth: params.replicateApiToken,
-    userAgent: "llama-chat",
+// ✅ Handle GET requests (prevents 405 errors)
+export async function GET() {
+  return new Response("GET method not supported for this endpoint", {
+    status: 405,
   });
-
-  if (!ip) {
-    console.error("IP address is null");
-    return new Response("IP address could not be retrieved", { status: 500 });
-  }
-
-  let response;
-  if (params.image) {
-    response = await runLlava(params);
-  } else if (params.audio) {
-    response = await runSalmonn(params);
-  } else {
-    response = await runLlama(params);
-  }
-
-  // Convert the response into a friendly text-stream
-  const stream = await ReplicateStream(response);
-  // Respond with the stream
-  return new StreamingTextResponse(stream);
 }
 
+// ✅ Handle POST requests
+export async function POST(req) {
+  try {
+    const params = await req.json();
+    const ip =
+      req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for");
+
+    if (!params.replicateApiToken) {
+      return new Response("Missing API token", { status: 400 });
+    }
+
+    params.replicateClient = new Replicate({
+      auth: params.replicateApiToken,
+      userAgent: "llama-chat",
+    });
+
+    if (!ip) {
+      console.error("IP address is null");
+      return new Response("IP address could not be retrieved", { status: 500 });
+    }
+
+    let response;
+    if (params.image) {
+      response = await runLlava(params);
+    } else if (params.audio) {
+      response = await runSalmonn(params);
+    } else {
+      response = await runLlama(params);
+    }
+
+    // Convert the response into a streaming text response
+    const stream = await ReplicateStream(response);
+    return new StreamingTextResponse(stream);
+  } catch (error) {
+    console.error("Error in POST request:", error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+}
+
+// ✅ Function to run Llama model
 async function runLlama({
   replicateClient,
   model,
@@ -47,26 +66,25 @@ async function runLlama({
   temperature,
   topP,
 }) {
-  console.log("running llama");
-  console.log("model", model);
-  console.log("maxTokens", maxTokens);
+  console.log("Running Llama model:", model);
 
   return await replicateClient.predictions.create({
-    model: model,
+    model,
     stream: true,
     input: {
-      prompt: `${prompt}`,
+      prompt,
       max_new_tokens: maxTokens,
       ...(model.includes("llama3")
         ? { max_tokens: maxTokens }
         : { max_new_tokens: maxTokens }),
-      temperature: temperature,
+      temperature,
       repetition_penalty: 1,
       top_p: topP,
     },
   });
 }
 
+// ✅ Function to run Llava model (for image-based AI)
 async function runLlava({
   replicateClient,
   prompt,
@@ -75,16 +93,16 @@ async function runLlava({
   topP,
   image,
 }) {
-  console.log("running llava");
+  console.log("Running Llava model");
 
   return await replicateClient.predictions.create({
     stream: true,
     input: {
-      prompt: `${prompt}`,
+      prompt,
       top_p: topP,
-      temperature: temperature,
+      temperature,
       max_tokens: maxTokens,
-      image: image,
+      image,
     },
     version: VERSIONS["yorickvp/llava-13b"],
   });
@@ -98,14 +116,14 @@ async function runSalmonn({
   topP,
   audio,
 }) {
-  console.log("running salmonn");
+  console.log("Running Salmonn model");
 
-  return await replicate.predictions.create({
+  return await replicateClient.predictions.create({
     stream: true,
     input: {
-      prompt: `${prompt}`,
+      prompt,
       top_p: topP,
-      temperature: temperature,
+      temperature,
       max_length: maxTokens,
       wav_path: audio,
     },
