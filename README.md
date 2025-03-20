@@ -2,12 +2,6 @@
 
 This is a [Next.js](https://nextjs.org/) app created by **Mohammed Omer** that demonstrates how to build a chat UI using the [Llama 3] language model and Replicate's [streaming API (private beta)](https://replicate.com/docs/streaming).
 
-## Demo
-
-Here’s a quick demo showcasing the functionality:
-
-[Watch Demo](https://github.com/replicate/llama-chat/assets/14149230/e700b256-dc34-4c4e-b912-8a84ec4bec6a)
-
 ## Usage
 
 To get started with this project, follow these steps:
